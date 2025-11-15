@@ -1,5 +1,0 @@
-Naive baseline (lag=24h)
-Overall MAE:  0.0797
-Overall RMSE: 0.2039
-Evaluated points: 3677184
-Per-group metrics saved to: reports/naive_baseline_per_group.csv
