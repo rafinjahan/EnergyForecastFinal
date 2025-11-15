@@ -1,0 +1,5 @@
+Naive hourly baseline (lag=168 hours)
+Overall MAE:  0.1455
+Overall RMSE: 0.4132
+Evaluated points: 3661056
+Per-group metrics saved to: reports/hourly_baseline_per_group.csv

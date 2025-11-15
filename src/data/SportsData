@@ -1,0 +1,15 @@
+import requests
+import pandas as pd
+
+
+
+BASE_URL = "https://livesport.su/api"
+
+def get_all_matches():
+    url = f"{BASE_URL}/api/matches"
+    r = requests.get(url)
+    r.raise_for_status()   
+    return r.json()   
+
+matches = get_all_matches()
+print(matches[0])

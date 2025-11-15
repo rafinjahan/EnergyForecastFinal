@@ -1,0 +1,5 @@
+Naive monthly baseline (lag=12 months)
+Overall MAE:  116.2062
+Overall RMSE: 292.4317
+Evaluated points: 3696
+Per-group metrics saved to: reports/monthly_baseline_per_group.csv
