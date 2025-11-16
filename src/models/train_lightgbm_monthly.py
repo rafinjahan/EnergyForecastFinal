@@ -26,9 +26,6 @@ from src.data.finnish_holidays import add_holiday_features
 MODEL_DIR = PROJECT_ROOT / "models" / "lgb_monthly"
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-TARGET_COL = "load_value"
-PRICE_COL = "price_signal"
-
 
 def calculate_mape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """Calculate Mean Absolute Percentage Error, handling zeros."""
@@ -59,20 +56,16 @@ def load_and_prepare_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         id_vars="measured_at",
         value_vars=group_cols,
         var_name="group_id",
-        value_name=TARGET_COL
+        value_name="load_mwh"
     )
     cons_long["group_id"] = cons_long["group_id"].astype(int)
     
     # Merge prices
-    price_source_col = next((col for col in prices.columns if col.lower().startswith("eur_per")), None)
-    if price_source_col:
-        prices = prices.rename(columns={price_source_col: PRICE_COL})
-    if PRICE_COL in prices.columns:
-        cons_long = cons_long.merge(
-            prices[["measured_at", PRICE_COL]],
-            on="measured_at",
-            how="left"
-        )
+    cons_long = cons_long.merge(
+        prices[["measured_at", "eur_per_mwh"]],
+        on="measured_at",
+        how="left"
+    )
     
     # Try to add simple averaged weather (optional - skip if errors)
     print("\\nAttempting to add weather features...")
@@ -189,7 +182,7 @@ def aggregate_to_monthly(df: pd.DataFrame) -> pd.DataFrame:
     
     # Aggregation dict
     agg_dict = {
-        TARGET_COL: "sum",  # Total monthly consumption
+        "load_mwh": "sum",  # Total monthly consumption
         "measured_at": "min",  # First timestamp of month
     }
     
@@ -200,8 +193,8 @@ def aggregate_to_monthly(df: pd.DataFrame) -> pd.DataFrame:
             agg_dict[col] = "mean"
     
     # Add price aggregation
-    if PRICE_COL in df.columns:
-        agg_dict[PRICE_COL] = "mean"
+    if "eur_per_mwh" in df.columns:
+        agg_dict["eur_per_mwh"] = "mean"
     
     # Add holiday aggregations if available
     holiday_cols = ["is_holiday", "is_holiday_eve", "is_holiday_after", "is_major_holiday_period"]
@@ -246,8 +239,8 @@ def engineer_monthly_features(df: pd.DataFrame, groups: pd.DataFrame) -> pd.Data
     # 24h ≈ same day last month (use lag 1 month) 
     # 168h ≈ same week last month (use lag 1 month)
     # Add 12-month lag for year-over-year pattern
-    df["load_lag_1m"] = df.groupby("group_id")[TARGET_COL].shift(1)
-    df["load_lag_12m"] = df.groupby("group_id")[TARGET_COL].shift(12)
+    df["load_lag_1m"] = df.groupby("group_id")["load_mwh"].shift(1)
+    df["load_lag_12m"] = df.groupby("group_id")["load_mwh"].shift(12)
     
     # === WEATHER FEATURES ===
     # Keep raw weather features (already aggregated to monthly means)
@@ -256,24 +249,24 @@ def engineer_monthly_features(df: pd.DataFrame, groups: pd.DataFrame) -> pd.Data
     
     # === PRICE FEATURES ===
     # Market prices with moving averages and volatility
-    if PRICE_COL in df.columns:
+    if "eur_per_mwh" in df.columns:
         # 3-month and 6-month moving averages
         df["price_ma_3m"] = (
-            df.groupby("group_id")[PRICE_COL]
+            df.groupby("group_id")["eur_per_mwh"]
             .transform(lambda x: x.shift(1).rolling(3, min_periods=1).mean())
         )
         df["price_ma_6m"] = (
-            df.groupby("group_id")[PRICE_COL]
+            df.groupby("group_id")["eur_per_mwh"]
             .transform(lambda x: x.shift(1).rolling(6, min_periods=1).mean())
         )
         
         # Price volatility (rolling standard deviation)
         df["price_volatility_3m"] = (
-            df.groupby("group_id")[PRICE_COL]
+            df.groupby("group_id")["eur_per_mwh"]
             .transform(lambda x: x.shift(1).rolling(3, min_periods=1).std())
         )
         df["price_volatility_6m"] = (
-            df.groupby("group_id")[PRICE_COL]
+            df.groupby("group_id")["eur_per_mwh"]
             .transform(lambda x: x.shift(1).rolling(6, min_periods=1).std())
         )
     
@@ -327,7 +320,7 @@ def prepare_train_val_split(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFram
 
 def get_feature_columns(df: pd.DataFrame) -> list:
     """Get list of feature columns - only the specified features."""
-    exclude_cols = ["measured_at", "group_id", TARGET_COL, "month_period", 
+    exclude_cols = ["measured_at", "group_id", "load_mwh", "month_period", 
                     "location_key", "station_slug", "station_name", "group_label",
                     "region", "province", "contract_type", "consumption_level",  # Exclude raw categorical
                     "year", "month"]  # Exclude raw time components
@@ -353,9 +346,9 @@ def train_model_for_group(
     
     # Prepare features and target
     X_train = train_group[feature_cols]
-    y_train = train_group[TARGET_COL]
+    y_train = train_group["load_mwh"]
     X_val = val_group[feature_cols]
-    y_val = val_group[TARGET_COL]
+    y_val = val_group["load_mwh"]
     
     # Fill NaN in features with median/0 instead of dropping all rows
     for col in X_train.columns:
@@ -527,10 +520,10 @@ def main():
     print("="*60)
     print("LIGHTGBM 12-MONTH FORECAST MODEL TRAINING")
     print("="*60)
-    print("\nDATA SOURCE VERIFICATION:")
-    print("  Input consumption data from Fortum training file")
-    print("  Output forecasts follow the same scale as input data")
-    print("  Prices are merged from the provided market feed")
+    print("\nDATA UNIT VERIFICATION:")
+    print("  Input data: MWh (megawatt-hours) from Fortum training file")
+    print("  Output forecasts: MWh (megawatt-hours)")
+    print("  Note: 1 MWh = 1,000,000 Wh (Watt hours)")
     print("="*60)
     
     # 1. Load and prepare data
