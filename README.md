@@ -13,7 +13,6 @@ forecasts/             # Generated submissions / artifacts
 src/data/              # Loaders, enrichment utilities, holiday helpers
 src/models/            # Training + inference scripts for each horizon
 METHODOLOGY.md         # Detailed documentation of approach
-SUBMISSION_SUMMARY.md  # Competition hand-in summary
 requirements.txt       # Python dependencies (LightGBM, pandas, etc.)
 ```
 
@@ -32,7 +31,6 @@ python src/models/train_lightgbm.py        # trains shared LightGBM + saves metr
 python src/models/test_forecast_48h.py     # produces 48h forecasts for Oct 1–2, 2024
 ```
 
-Artifacts land under `models/` (e.g., `models/lgb_weather_model.pkl` and validation CSVs).
 
 ### 12-Month Model
 
@@ -40,14 +38,3 @@ Artifacts land under `models/` (e.g., `models/lgb_weather_model.pkl` and validat
 python src/models/train_lightgbm_monthly.py   # trains 112 per-group monthly models
 python src/models/forecast_monthly.py         # generates 12-month forecast submission
 ```
-
-Models, feature lists, and summaries are written to `models/lgb_monthly/`.
-
-## Verification
-
-- All scripts log their train/validation windows and per-group MAPE statistics.
-- Check `models/*_metrics.txt` or `models/lgb_monthly/training_metrics.csv` for validation scores.
-
-## Support
-
-See `METHODOLOGY.md` for the methodological deep dive and `SUBMISSION_SUMMARY.md` for the official submission notes.
