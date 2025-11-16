@@ -92,6 +92,7 @@
 - **Data gaps**: only historical weather/price observations; no probabilistic or forecast inputs yet.
 - **Model scope**: monthly models remain independent (no cross-learning) and provide point estimates only.
 - **Tuning**: manual hyperparameters; automated search (e.g., Optuna) is planned.
+- **Engineering polish**: logging is fairly verbose/duplicated between scripts and some modules keep unused imports; tightening those would make the toolkit leaner.
 
 **Recommended roadmap**
 1. Integrate short-term weather and price forecasts into the 48h pipeline.
