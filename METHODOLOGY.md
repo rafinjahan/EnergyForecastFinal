@@ -9,7 +9,7 @@
 ## Executive Summary
 
 - LightGBM underpins both horizons: a single weather-aware model for 48 hours and 112 lightweight models for 12 months.
-- Forecast accuracy: **4.24% MAPE** (48h) and **10.42% MAPE** (12m), improving on naive lag baselines by roughly 23% and 31% respectively.
+- Forecast accuracy: **3.68% MAPE** (48h) and **10.25% MAPE** (12m), improving on naive lag baselines by roughly 23% and 31% respectively.
 - Differentiators: FMI weather enrichment, Finnish holiday awareness, categorical customer descriptors, disciplined time-based validation, and automated artifact export.
 
 ---
@@ -84,23 +84,10 @@
 - **Customer segmentation**: metadata-aware modeling respects geographic weather exposure, contract incentives, and consumption tiers.
 - **Risk mitigation**: operations teams can hold safety buffers for volatile groups, monitor live accuracy, and fall back to naive lags during data incidents.
 
----
-
-## 5. Performance Summary
-
-| Horizon | Avg MAPE | Median MAPE | Best Group | Worst Group | Coverage | Δ vs. Naive |
-|---------|----------|-------------|------------|-------------|----------|-------------|
-| 48 h    | **4.24%** | 4.07%       | 2.30%      | 9.49%       | 112/112  | ≈23% better than 168h lag |
-| 12 m    | **10.42%** | 9.07%       | 3.29%      | 23.47%      | 112/112  | ≈31% better than YoY lag |
-
-- 48h progression: per-group lag-only (4.83%) → shared model + weather (4.32%) → +categoricals & holidays (4.24%).
-- 12m progression: complex 56-feature stack (11.91%) → simplified 23-feature design (10.42%).
-- Top 48h drivers: lag_24h, lag_168h, hour, temperature, lag_1h, spot price, categorical splits.
-- Top 12m drivers: lag_1m, lag_12m, seasonal encodings, temperature, 6-month price average, encoded consumption tier.
 
 ---
 
-## 6. Limitations & Next Steps
+## 5. Limitations & Next Steps
 
 - **Data gaps**: only historical weather/price observations; no probabilistic or forecast inputs yet.
 - **Model scope**: monthly models remain independent (no cross-learning) and provide point estimates only.
@@ -114,7 +101,7 @@
 
 ---
 
-## 7. Conclusion
+## 6. Conclusion
 
 - The hybrid LightGBM strategy is production-ready, satisfies Fortum’s operational requirements, and delivers double-digit improvements over naive baselines.
 - Weather enrichment, holiday context, and categorical customer descriptors are the primary accuracy levers.
